@@ -1,4 +1,5 @@
 const { ERROR_MESSAGES, HTTP_STATUS } = require('../config/constants')
+const logger = require('../config/logger')
 
 // 404錯誤處理中間件
 const notFoundHandler = (_, res) => {
@@ -11,7 +12,7 @@ const notFoundHandler = (_, res) => {
 
 // 全域錯誤處理中間件
 const globalErrorHandler = (err, _, res, __) => {
-  console.error('全域錯誤:', err.stack)
+  logger.error('全域錯誤:', err)
   
   // 根據錯誤類型決定狀態碼
   const status = err.status || err.statusCode || HTTP_STATUS.INTERNAL_SERVER_ERROR

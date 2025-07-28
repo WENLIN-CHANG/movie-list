@@ -1,4 +1,12 @@
-// 應用程式常數配置
+/**
+ * 應用程式常數配置
+ * @module config/constants
+ */
+
+/**
+ * 應用程式配置常數
+ * @typedef {Object} AppConstants
+ */
 module.exports = {
   // 伺服器配置
   SERVER: {

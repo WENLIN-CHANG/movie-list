@@ -1,7 +1,17 @@
+/**
+ * 電影資料模型
+ * @module models/movieModel
+ */
+
 const fs = require('fs')
 const path = require('path')
 const { CACHE, EXTERNAL, PAGINATION } = require('../config/constants')
+const logger = require('../config/logger')
 
+/**
+ * 電影資料模型類別
+ * 負責管理電影資料的載入、搜尋和快取
+ */
 class MovieModel {
   constructor() {
     this.movies = []
@@ -12,7 +22,12 @@ class MovieModel {
     this.loadingPromise = this.loadMovies()
   }
 
-  // 載入電影資料（異步版本）
+  /**
+   * 載入電影資料（異步版本）
+   * 從JSON檔案中讀取電影資料並解析
+   * @async
+   * @throws {Error} 當檔案讀取或解析失敗時拋出錯誤
+   */
   async loadMovies() {
     try {
       const dataPath = path.join(__dirname, EXTERNAL.MOVIE_DATA_PATH)
@@ -20,16 +35,21 @@ class MovieModel {
       const movieData = JSON.parse(data)
       this.movies = movieData.results || []
       this.isLoaded = true
-      console.log(`成功載入 ${this.movies.length} 部電影`)
+      logger.info(`成功載入 ${this.movies.length} 部電影`)
     } catch (error) {
-      console.error('載入電影資料失敗:', error)
+      logger.error('載入電影資料失敗:', error)
       this.movies = []
       this.isLoaded = false
       throw error // 重新拋出錯誤，讓調用者知道載入失敗
     }
   }
 
-  // 取得所有電影（異步）
+  /**
+   * 取得所有電影（異步）
+   * 確保資料已載入後返回所有電影列表
+   * @async
+   * @returns {Promise<Array>} 電影陣列
+   */
   async getAllMovies() {
     if (!this.isLoaded) {
       await this.loadingPromise
@@ -37,7 +57,12 @@ class MovieModel {
     return this.movies
   }
 
-  // 根據ID取得單部電影（異步）
+  /**
+   * 根據ID取得單部電影（異步）
+   * @async
+   * @param {string|number} id - 電影ID
+   * @returns {Promise<Object|undefined>} 電影物件，若找不到則返回undefined
+   */
   async getMovieById(id) {
     const movies = await this.getAllMovies()
     return movies.find(movie => movie.id.toString() === id.toString())
@@ -53,7 +78,15 @@ class MovieModel {
     }
   }
 
-  // 搜尋電影（附快取功能）（異步）
+  /**
+   * 搜尋電影（附快取功能）（異步）
+   * 根據關鍵字搜尋電影，支援分頁和結果快取
+   * @async
+   * @param {string|null} keyword - 搜尋關鍵字，null表示取得所有電影
+   * @param {number} [page=1] - 頁碼，從1開始
+   * @param {number} [limit=20] - 每頁顯示數量
+   * @returns {Promise<Object>} 包含電影列表和分頁資訊的物件
+   */
   async searchMovies(keyword, page = 1, limit = PAGINATION.DEFAULT_LIMIT) {
     const movies = await this.getAllMovies()
     
@@ -65,11 +98,11 @@ class MovieModel {
       const cached = this.searchCache.get(cacheKey)
       
       if (cached && (Date.now() - cached.timestamp) < this.cacheTimeout) {
-        console.log(`從快取返回搜尋結果: "${keyword}"`)
+        logger.debug(`從快取返回搜尋結果: "${keyword}"`)
         filteredMovies = cached.results
       } else {
         // 執行搜尋
-        console.log(`執行新搜尋: "${keyword}"`)
+        logger.debug(`執行新搜尋: "${keyword}"`)
         const lowerKeyword = keyword.toLowerCase()
         filteredMovies = movies.filter(movie => {
           return Object.values(movie).some(property => {
@@ -129,10 +162,12 @@ class MovieModel {
     }
   }
 
-  // 清空搜尋快取
+  /**
+   * 清空搜尋快取
+   */
   clearCache() {
     this.searchCache.clear()
-    console.log('搜尋快取已清空')
+    logger.info('搜尋快取已清空')
   }
 }
 

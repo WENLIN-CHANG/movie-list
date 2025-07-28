@@ -1,10 +1,26 @@
+/**
+ * 電影控制器
+ * @module controllers/movieController
+ */
+
 const movieModel = require('../models/movieModel')
 const { validateAndSanitizeSearch, validateMovieId } = require('../middleware/validation')
 const { EXTERNAL, PAGINATION, ERROR_MESSAGES, HTTP_STATUS } = require('../config/constants')
 const { sendErrorResponse, isAjaxRequest, sendJsonResponse, sendPageResponse } = require('../utils/responseUtils')
+const logger = require('../config/logger')
 
+/**
+ * 電影控制器物件
+ * 處理電影相關的HTTP請求
+ */
 const movieController = {
-  // 取得電影列表（包含搜尋功能）
+  /**
+   * 取得電影列表（包含搜尋功能）
+   * 支援關鍵字搜尋、分頁，並可回應JSON或HTML
+   * @async
+   * @param {Object} req - Express請求物件
+   * @param {Object} res - Express響應物件
+   */
   getMovies: async (req, res) => {
     try {
       const keyword = validateAndSanitizeSearch(req.query.search)
@@ -41,7 +57,7 @@ const movieController = {
         keyword
       })
     } catch (error) {
-      console.error('取得電影列表時發生錯誤:', error)
+      logger.error('取得電影列表時發生錯誤:', error)
       
       return sendErrorResponse(
         res,
@@ -53,7 +69,13 @@ const movieController = {
     }
   },
 
-  // 取得電影詳情
+  /**
+   * 取得電影詳情
+   * 根據ID取得單部電影的詳細資訊
+   * @async
+   * @param {Object} req - Express請求物件
+   * @param {Object} res - Express響應物件
+   */
   getMovieDetail: async (req, res) => {
     try {
       const id = req.params.id
@@ -86,7 +108,7 @@ const movieController = {
         BASE_IMG_URL: EXTERNAL.BASE_IMG_URL 
       })
     } catch (error) {
-      console.error('取得電影詳情時發生錯誤:', error)
+      logger.error('取得電影詳情時發生錯誤:', error)
       
       return sendErrorResponse(
         res,

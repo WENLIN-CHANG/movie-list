@@ -3,6 +3,7 @@ const { engine } = require('express-handlebars')
 const movieRoutes = require('./routes/movies')
 const { notFoundHandler, globalErrorHandler } = require('./middleware/errorHandler')
 const { SERVER, PAGINATION } = require('./config/constants')
+const logger = require('./config/logger')
 
 const app = express()
 const port = process.env.PORT || SERVER.DEFAULT_PORT
@@ -51,5 +52,7 @@ app.use(notFoundHandler)
 app.use(globalErrorHandler)
 
 app.listen(port, () => {
-  console.log(`express server is running on http://localhost:${port}`)
+  logger.info(`Express伺服器已啟動於 http://localhost:${port}`)
+  logger.info(`環境: ${process.env.NODE_ENV || 'development'}`)
+  logger.info(`日誌等級: ${logger.level}`)
 })

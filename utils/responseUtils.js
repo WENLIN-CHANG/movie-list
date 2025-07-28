@@ -1,12 +1,19 @@
+/**
+ * 響應工具函數
+ * @module utils/responseUtils
+ */
+
 const { HTTP_STATUS } = require('../config/constants')
 
 /**
  * 發送錯誤響應
+ * 根據請求類型回應JSON或HTML錯誤頁面
  * @param {Object} res - Express response 對象
  * @param {number} status - HTTP 狀態碼
  * @param {string} title - 錯誤標題
  * @param {string} message - 錯誤訊息
- * @param {boolean} isAjax - 是否為 AJAX 請求
+ * @param {boolean} [isAjax=false] - 是否為 AJAX 請求
+ * @returns {Object} Express響應物件
  */
 const sendErrorResponse = (res, status, title, message, isAjax = false) => {
   if (isAjax) {

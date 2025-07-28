@@ -1,6 +1,16 @@
+/**
+ * 輸入驗證中間件
+ * @module middleware/validation
+ */
+
 const { VALIDATION, ERROR_MESSAGES } = require('../config/constants')
 
-// 驗證和清理搜尋參數
+/**
+ * 驗證和清理搜尋參數
+ * 移除危險字符，限制長度，防止XSS攻擊
+ * @param {string|undefined} searchParam - 原始搜尋參數
+ * @returns {string|null} 清理後的搜尋關鍵字，若無效則返回null
+ */
 const validateAndSanitizeSearch = (searchParam) => {
   if (!searchParam) {
     return null
@@ -20,7 +30,12 @@ const validateAndSanitizeSearch = (searchParam) => {
   return keyword || null
 }
 
-// 驗證電影ID
+/**
+ * 驗證電影ID
+ * 檢查ID是否為有效的正整數
+ * @param {string|number|undefined} id - 電影ID
+ * @returns {string|null} 錯誤訊息，若驗證通過則返回null
+ */
 const validateMovieId = (id) => {
   if (!id) {
     return ERROR_MESSAGES.INVALID_MOVIE_ID
