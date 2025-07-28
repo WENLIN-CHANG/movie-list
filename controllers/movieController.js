@@ -8,15 +8,45 @@ const movieController = {
   getMovies: (req, res) => {
     try {
       const keyword = validateAndSanitizeSearch(req.query.search)
-      const movies = movieModel.searchMovies(keyword)
+      const page = parseInt(req.query.page) || 1
+      const limit = parseInt(req.query.limit) || 20
       
+      // 驗證分頁參數
+      if (page < 1 || limit < 1 || limit > 100) {
+        return res.status(400).render('error', {
+          status: 400,
+          title: '錯誤請求',
+          message: '無效的分頁參數'
+        })
+      }
+      
+      const result = movieModel.searchMovies(keyword, page, limit)
+      
+      // 如果是AJAX請求，返回JSON
+      if (req.headers['x-requested-with'] === 'XMLHttpRequest') {
+        return res.json({
+          ...result,
+          keyword,
+          BASE_IMG_URL
+        })
+      }
+      
+      // 否則渲染頁面
       res.render('index', { 
-        movies, 
+        movies: result.movies,
+        pagination: result.pagination,
         BASE_IMG_URL, 
-        keyword 
+        keyword
       })
     } catch (error) {
       console.error('取得電影列表時發生錯誤:', error)
+      
+      if (req.headers['x-requested-with'] === 'XMLHttpRequest') {
+        return res.status(500).json({
+          error: '無法載入電影列表'
+        })
+      }
+      
       res.status(500).render('error', {
         status: 500,
         title: '伺服器錯誤',

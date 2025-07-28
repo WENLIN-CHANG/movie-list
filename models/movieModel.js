@@ -51,44 +51,60 @@ class MovieModel {
   }
 
   // 搜尋電影（附快取功能）
-  searchMovies(keyword) {
+  searchMovies(keyword, page = 1, limit = 20) {
     const movies = this.getAllMovies()
     
-    if (!keyword) {
-      return movies
-    }
-
-    // 檢查快取
-    const cacheKey = keyword.toLowerCase()
-    const cached = this.searchCache.get(cacheKey)
+    let filteredMovies = movies
     
-    if (cached && (Date.now() - cached.timestamp) < this.cacheTimeout) {
-      console.log(`從快取返回搜尋結果: "${keyword}"`)
-      return cached.results
+    if (keyword) {
+      // 檢查快取
+      const cacheKey = keyword.toLowerCase()
+      const cached = this.searchCache.get(cacheKey)
+      
+      if (cached && (Date.now() - cached.timestamp) < this.cacheTimeout) {
+        console.log(`從快取返回搜尋結果: "${keyword}"`)
+        filteredMovies = cached.results
+      } else {
+        // 執行搜尋
+        console.log(`執行新搜尋: "${keyword}"`)
+        const lowerKeyword = keyword.toLowerCase()
+        filteredMovies = movies.filter(movie => {
+          return Object.values(movie).some(property => {
+            if (typeof property === 'string') {
+              return property.toLowerCase().includes(lowerKeyword)
+            }
+            return false
+          })
+        })
+
+        // 儲存到快取
+        this.searchCache.set(cacheKey, {
+          results: filteredMovies,
+          timestamp: Date.now()
+        })
+
+        // 清理過期快取
+        this.cleanExpiredCache()
+      }
     }
 
-    // 執行搜尋
-    console.log(`執行新搜尋: "${keyword}"`)
-    const lowerKeyword = keyword.toLowerCase()
-    const results = movies.filter(movie => {
-      return Object.values(movie).some(property => {
-        if (typeof property === 'string') {
-          return property.toLowerCase().includes(lowerKeyword)
-        }
-        return false
-      })
-    })
+    // 分頁邏輯
+    const total = filteredMovies.length
+    const totalPages = Math.ceil(total / limit)
+    const offset = (page - 1) * limit
+    const paginatedMovies = filteredMovies.slice(offset, offset + limit)
 
-    // 儲存到快取
-    this.searchCache.set(cacheKey, {
-      results,
-      timestamp: Date.now()
-    })
-
-    // 清理過期快取
-    this.cleanExpiredCache()
-
-    return results
+    return {
+      movies: paginatedMovies,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        total,
+        limit,
+        hasNext: page < totalPages,
+        hasPrev: page > 1
+      }
+    }
   }
 
   // 重新載入資料（用於開發時資料更新）

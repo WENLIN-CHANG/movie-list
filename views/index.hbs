@@ -4,28 +4,148 @@
     <div class="col-12">
       <form action="/movies">
         <div class="input-group mb-3">
-          <input type="text" name="search" class="form-control" placeholder="Enter movie name to search..."
-            aria-label="Movie Name..." aria-describedby="search-button" value="{{keyword}}">
+          <input type="text" name="search" class="form-control" placeholder="輸入電影名稱搜尋..."
+            aria-label="電影名稱..." aria-describedby="search-button" value="{{keyword}}" autocomplete="off">
           <div class="input-group-append">
-            <button class="btn btn-outline-secondary" type="submit" id="search-button">Search</button>
+            <button class="btn btn-outline-secondary" type="submit" id="search-button">搜尋</button>
           </div>
         </div>
       </form>
     </div>
   </div>
+  
+  <!-- results info -->
+  {{#if keyword}}
+    <div class="row mb-3">
+      <div class="col-12">
+        <div class="alert alert-info" role="alert">
+          搜尋 "<strong>{{keyword}}</strong>" 共找到 <strong>{{pagination.total}}</strong> 部電影
+          <a href="/movies" class="btn btn-sm btn-outline-primary ms-2">清除搜尋</a>
+        </div>
+      </div>
+    </div>
+  {{else}}
+    <div class="row mb-3">
+      <div class="col-12">
+        <p class="text-muted">共有 <strong>{{pagination.total}}</strong> 部電影</p>
+      </div>
+    </div>
+  {{/if}}
+  
   <!-- movie list -->
   <div class="row" id="data-panel">
-    {{#each movies as |movie|}}
-    <div class="col-sm-3">
-      <a href="/movie/{{movie.id}}" class="text-secondary">
-        <div class="card mb-2">
-          <img class="card-img-top" src="{{../BASE_IMG_URL}}{{movie.image}}" alt="Card image cap">
-          <div class="card-body movie-item-body">
-            <h6 class="card-title">{{movie.title}}</h6>
+    {{#if movies.length}}
+      {{#each movies as |movie|}}
+      <div class="col-sm-3 mb-3">
+        <a href="/movie/{{movie.id}}" class="text-secondary text-decoration-none">
+          <div class="card h-100 shadow-sm movie-card">
+            <img class="card-img-top lazy-load" 
+                 data-src="{{../BASE_IMG_URL}}{{movie.image}}" 
+                 alt="{{movie.title}}"
+                 src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='150'%3E%3Crect width='100%25' height='100%25' fill='%23eee'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em'%3E載入中...%3C/text%3E%3C/svg%3E"
+                 loading="lazy">
+            <div class="card-body movie-item-body">
+              <h6 class="card-title">{{movie.title}}</h6>
+            </div>
           </div>
+        </a>
+      </div>
+      {{/each}}
+    {{else}}
+      <div class="col-12 text-center">
+        <div class="alert alert-warning" role="alert">
+          <h4 class="alert-heading">沒有找到電影</h4>
+          {{#if keyword}}
+            <p>沒有找到包含 "<strong>{{keyword}}</strong>" 的電影。</p>
+            <a href="/movies" class="btn btn-primary">查看所有電影</a>
+          {{else}}
+            <p>目前沒有可顯示的電影。</p>
+          {{/if}}
         </div>
-      </a>
-    </div>
-    {{/each}}
+      </div>
+    {{/if}}
   </div>
+  
+  <!-- pagination -->
+  {{#if pagination.totalPages}}
+    {{#if (gt pagination.totalPages 1)}}
+      <div class="row mt-4">
+        <div class="col-12">
+          <nav aria-label="電影列表分頁">
+            <ul class="pagination justify-content-center">
+              <!-- 上一頁 -->
+              {{#if pagination.hasPrev}}
+                <li class="page-item">
+                  <a class="page-link" href="?{{#if keyword}}search={{keyword}}&{{/if}}page={{subtract pagination.currentPage 1}}" aria-label="上一頁">
+                    <span aria-hidden="true">&laquo;</span>
+                  </a>
+                </li>
+              {{else}}
+                <li class="page-item disabled">
+                  <span class="page-link" aria-label="上一頁">
+                    <span aria-hidden="true">&laquo;</span>
+                  </span>
+                </li>
+              {{/if}}
+
+              <!-- 頁碼 -->
+              {{#each (range 1 pagination.totalPages pagination.currentPage) as |pageNum|}}
+                {{#if (eq pageNum pagination.currentPage)}}
+                  <li class="page-item active">
+                    <span class="page-link">{{pageNum}}</span>
+                  </li>
+                {{else}}
+                  <li class="page-item">
+                    <a class="page-link" href="?{{#if ../keyword}}search={{../keyword}}&{{/if}}page={{pageNum}}">{{pageNum}}</a>
+                  </li>
+                {{/if}}
+              {{/each}}
+
+              <!-- 下一頁 -->
+              {{#if pagination.hasNext}}
+                <li class="page-item">
+                  <a class="page-link" href="?{{#if keyword}}search={{keyword}}&{{/if}}page={{add pagination.currentPage 1}}" aria-label="下一頁">
+                    <span aria-hidden="true">&raquo;</span>
+                  </a>
+                </li>
+              {{else}}
+                <li class="page-item disabled">
+                  <span class="page-link" aria-label="下一頁">
+                    <span aria-hidden="true">&raquo;</span>
+                  </span>
+                </li>
+              {{/if}}
+            </ul>
+          </nav>
+        </div>
+      </div>
+    {{/if}}
+  {{/if}}
 </div>
+
+<style>
+.movie-card {
+  transition: transform 0.2s ease-in-out;
+}
+
+.movie-card:hover {
+  transform: translateY(-5px);
+}
+
+.lazy-load {
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.lazy-load[src*="data:image"] {
+  opacity: 0.6;
+}
+
+.lazy-load:not([src*="data:image"]) {
+  opacity: 1;
+}
+
+#loading-indicator {
+  z-index: 100;
+}
+</style>
