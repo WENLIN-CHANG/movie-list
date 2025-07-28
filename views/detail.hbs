@@ -1,4 +1,13 @@
 <div class="container py-5">
+  <!-- 返回按鍵 -->
+  <div class="row mb-3">
+    <div class="col-12">
+      <button onclick="history.back()" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left"></i> 返回
+      </button>
+    </div>
+  </div>
+  
   <div class="text-center">
     <h1 class="mb-4">{{movie.title}}</h1>
     <img class="rounded mb-4" src="{{BASE_IMG_URL}}{{movie.image}}" alt="Card image cap" style="max-height: 300px;">
