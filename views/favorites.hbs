@@ -1,0 +1,75 @@
+<div class="container mt-5">
+  <!-- 標題 -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <h2><i class="fas fa-heart text-danger"></i> 我的收藏清單</h2>
+      <p class="text-muted">已收藏 <span id="favorite-count">{{favorites.length}}</span> 部電影</p>
+    </div>
+  </div>
+
+  <!-- 收藏電影列表 -->
+  <div class="row" id="favorites-panel">
+    {{#if favorites.length}}
+      {{#each favorites as |movie|}}
+      <div class="col-sm-3 mb-3">
+        <div class="card h-100 shadow-sm favorite-movie-card position-relative">
+          <a href="/movie/{{movie.id}}" class="text-secondary text-decoration-none">
+            <img class="card-img-top" 
+                 src="{{../BASE_IMG_URL}}{{movie.image}}" 
+                 alt="{{movie.title}}"
+                 loading="lazy">
+            <div class="card-body">
+              <h6 class="card-title">{{movie.title}}</h6>
+              <small class="text-muted">收藏於 {{formatDate movie.addedAt}}</small>
+            </div>
+          </a>
+          <button class="btn btn-danger btn-sm remove-favorite-btn position-absolute" 
+                  data-movie-id="{{movie.id}}" 
+                  title="移除收藏"
+                  style="top: 8px; right: 8px; z-index: 10;">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+      </div>
+      {{/each}}
+    {{else}}
+      <div class="col-12 text-center">
+        <div class="alert alert-info" role="alert">
+          <h4 class="alert-heading">還沒有收藏任何電影</h4>
+          <p>快去首頁發現喜歡的電影吧！</p>
+          <hr>
+          <a href="/" class="btn btn-primary">
+            <i class="fas fa-arrow-left"></i> 回到首頁
+          </a>
+        </div>
+      </div>
+    {{/if}}
+  </div>
+</div>
+
+<style>
+.favorite-movie-card {
+  transition: transform 0.2s ease-in-out;
+}
+
+.favorite-movie-card:hover {
+  transform: translateY(-5px);
+}
+
+.remove-favorite-btn {
+  background: rgba(220, 53, 69, 0.9);
+  border: none;
+  border-radius: 50%;
+  width: 35px;
+  height: 35px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.remove-favorite-btn:hover {
+  background: rgba(220, 53, 69, 1);
+  transform: scale(1.1);
+}
+</style>

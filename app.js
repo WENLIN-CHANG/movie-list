@@ -1,6 +1,7 @@
 const express = require('express')
 const { engine } = require('express-handlebars')
 const movieRoutes = require('./routes/movies')
+const favoriteRoutes = require('./routes/favorites')
 const { notFoundHandler, globalErrorHandler } = require('./middleware/errorHandler')
 const { SERVER, PAGINATION } = require('./config/constants')
 const logger = require('./config/logger')
@@ -17,6 +18,16 @@ app.engine('.hbs', engine({
     subtract: (a, b) => a - b,
     gt: (a, b) => a > b,
     eq: (a, b) => a === b,
+    // 日期格式化 helper
+    formatDate: (dateString) => {
+      if (!dateString) return ''
+      const date = new Date(dateString)
+      return date.toLocaleDateString('zh-TW', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      })
+    },
     // 生成分頁範圍
     range: (_, end, current) => {
       const pages = []
@@ -44,8 +55,13 @@ app.set('views', './views')
 // 靜態檔案中間件
 app.use(express.static('public'))
 
+// JSON 解析中間件
+app.use(express.json())
+app.use(express.urlencoded({ extended: true }))
+
 // 路由
 app.use('/', movieRoutes)
+app.use('/favorites', favoriteRoutes)
 
 // 錯誤處理中間件（必須放在所有路由之後）
 app.use(notFoundHandler)

@@ -142,18 +142,25 @@ class SearchManager {
 
     // 更新電影列表
     const moviesHtml = movies.map(movie => `
-      <div class="col-sm-3">
-        <a href="/movie/${movie.id}" class="text-secondary">
-          <div class="card mb-2">
+      <div class="col-sm-3 mb-3">
+        <div class="card h-100 shadow-sm movie-card">
+          <a href="/movie/${movie.id}" class="text-secondary text-decoration-none">
             <img class="card-img-top lazy-load" 
                  data-src="https://movie-list.alphacamp.io/posters/${movie.image}" 
                  alt="${movie.title}"
                  src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='150'%3E%3Crect width='100%25' height='100%25' fill='%23eee'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em'%3E載入中...%3C/text%3E%3C/svg%3E">
-            <div class="card-body movie-item-body">
-              <h6 class="card-title">${movie.title}</h6>
-            </div>
+          </a>
+          <div class="card-body movie-item-body d-flex justify-content-between align-items-center">
+            <h6 class="card-title mb-0">${movie.title}</h6>
+            <button class="btn btn-primary btn-sm favorite-btn ms-2" 
+                    data-movie-id="${movie.id}" 
+                    data-movie-title="${movie.title}"
+                    data-movie-image="${movie.image}"
+                    onclick="event.preventDefault();">
+              <i class="fas fa-plus"></i>
+            </button>
           </div>
-        </a>
+        </div>
       </div>
     `).join('')
 
@@ -228,10 +235,256 @@ class SearchManager {
   }
 }
 
+// 收藏功能管理
+class FavoriteManager {
+  constructor() {
+    this.favorites = new Set()
+    this.init()
+  }
+
+  init() {
+    this.loadFavorites()
+    this.setupEventListeners()
+  }
+
+  async loadFavorites() {
+    try {
+      const response = await fetch('/favorites/api')
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success) {
+          this.favorites = new Set(data.favorites.map(fav => fav.id))
+          this.updateFavoriteButtons()
+        }
+      }
+    } catch (error) {
+      console.error('載入收藏清單失敗:', error)
+    }
+  }
+
+  setupEventListeners() {
+    document.addEventListener('click', (e) => {
+      if (e.target.closest('.favorite-btn')) {
+        e.preventDefault()
+        const btn = e.target.closest('.favorite-btn')
+        this.toggleFavorite(btn)
+      }
+      
+      if (e.target.closest('.remove-favorite-btn')) {
+        e.preventDefault()
+        const btn = e.target.closest('.remove-favorite-btn')
+        this.removeFavorite(btn)
+      }
+    })
+  }
+
+  async toggleFavorite(btn) {
+    const movieId = parseInt(btn.dataset.movieId)
+    const movieTitle = btn.dataset.movieTitle
+    const movieImage = btn.dataset.movieImage
+
+    if (this.favorites.has(movieId)) {
+      await this.removeFavoriteById(movieId, btn)
+    } else {
+      await this.addFavorite(movieId, movieTitle, movieImage, btn)
+    }
+  }
+
+  async addFavorite(movieId, title, image, btn) {
+    try {
+      btn.disabled = true
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'
+
+      const response = await fetch('/favorites/api', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          movieId,
+          title,
+          image
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+
+      const result = await response.json()
+      
+      if (result.success) {
+        this.favorites.add(movieId)
+        this.updateFavoriteButton(btn, true)
+        this.showMessage('已加入收藏清單！', 'success')
+      } else {
+        this.updateFavoriteButton(btn, false)
+        this.showMessage(result.message, 'warning')
+      }
+    } catch (error) {
+      console.error('加入收藏失敗:', error)
+      this.updateFavoriteButton(btn, false)
+      this.showMessage('加入收藏失敗，請稍後再試', 'danger')
+    } finally {
+      btn.disabled = false
+    }
+  }
+
+  async removeFavoriteById(movieId, btn) {
+    try {
+      btn.disabled = true
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'
+
+      const response = await fetch(`/favorites/api/${movieId}`, {
+        method: 'DELETE'
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+
+      const result = await response.json()
+      
+      if (result.success) {
+        this.favorites.delete(movieId)
+        this.updateFavoriteButton(btn, false)
+        this.showMessage('已從收藏清單移除', 'info')
+      } else {
+        this.updateFavoriteButton(btn, true)
+        this.showMessage(result.message, 'warning')
+      }
+    } catch (error) {
+      console.error('移除收藏失敗:', error)
+      this.updateFavoriteButton(btn, true)
+      this.showMessage('移除收藏失敗，請稍後再試', 'danger')
+    } finally {
+      btn.disabled = false
+    }
+  }
+
+  async removeFavorite(btn) {
+    const movieId = parseInt(btn.dataset.movieId)
+    const movieCard = btn.closest('.col-sm-3')
+    
+    try {
+      const response = await fetch(`/favorites/api/${movieId}`, {
+        method: 'DELETE'
+      })
+
+      const result = await response.json()
+      
+      if (result.success) {
+        this.favorites.delete(movieId)
+        
+        // 移除卡片動畫
+        movieCard.style.transform = 'scale(0)'
+        movieCard.style.opacity = '0'
+        
+        setTimeout(() => {
+          movieCard.remove()
+          this.updateFavoriteCount()
+          
+          // 檢查是否還有收藏
+          if (document.querySelectorAll('#favorites-panel .col-sm-3').length === 0) {
+            this.showEmptyState()
+          }
+        }, 300)
+        
+        this.showMessage('已從收藏清單移除', 'info')
+      } else {
+        this.showMessage(result.message, 'warning')
+      }
+    } catch (error) {
+      console.error('移除收藏失敗:', error)
+      this.showMessage('移除收藏失敗，請稍後再試', 'danger')
+    }
+  }
+
+  updateFavoriteButtons() {
+    const buttons = document.querySelectorAll('.favorite-btn')
+    buttons.forEach(btn => {
+      const movieId = parseInt(btn.dataset.movieId)
+      this.updateFavoriteButton(btn, this.favorites.has(movieId))
+    })
+  }
+
+  updateFavoriteButton(btn, isFavorited) {
+    if (isFavorited) {
+      btn.classList.remove('btn-primary')
+      btn.classList.add('btn-danger')
+      btn.innerHTML = '<i class="fas fa-times"></i>'
+      btn.title = '從收藏清單移除'
+    } else {
+      btn.classList.remove('btn-danger')
+      btn.classList.add('btn-primary')
+      btn.innerHTML = '<i class="fas fa-plus"></i>'
+      btn.title = '加入收藏清單'
+    }
+  }
+
+  updateFavoriteCount() {
+    const countElement = document.getElementById('favorite-count')
+    if (countElement) {
+      const currentCount = document.querySelectorAll('#favorites-panel .col-sm-3').length
+      countElement.textContent = currentCount
+    }
+  }
+
+  showEmptyState() {
+    const favoritesPanel = document.getElementById('favorites-panel')
+    if (favoritesPanel) {
+      favoritesPanel.innerHTML = `
+        <div class="col-12 text-center">
+          <div class="alert alert-info" role="alert">
+            <h4 class="alert-heading">還沒有收藏任何電影</h4>
+            <p>快去首頁發現喜歡的電影吧！</p>
+            <hr>
+            <a href="/" class="btn btn-primary">
+              <i class="fas fa-arrow-left"></i> 回到首頁
+            </a>
+          </div>
+        </div>
+      `
+    }
+  }
+
+  showMessage(message, type = 'info') {
+    // 移除現有訊息
+    const existingAlert = document.querySelector('.favorite-alert')
+    if (existingAlert) {
+      existingAlert.remove()
+    }
+
+    // 創建新訊息
+    const alert = document.createElement('div')
+    alert.className = `alert alert-${type} favorite-alert position-fixed`
+    alert.style.cssText = 'top: 80px; right: 20px; z-index: 1050; min-width: 300px;'
+    alert.innerHTML = `
+      ${message}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `
+
+    document.body.appendChild(alert)
+
+    // 自動移除
+    setTimeout(() => {
+      if (alert.parentNode) {
+        alert.remove()
+      }
+    }, 3000)
+  }
+}
+
 // 初始化
 document.addEventListener('DOMContentLoaded', () => {
   window.searchManager = new SearchManager()
+  window.favoriteManager = new FavoriteManager()
   
   // 初始化現有圖片的延遲載入
   window.searchManager.initLazyLoading()
+  
+  // 如果在收藏頁面，載入收藏清單
+  if (window.location.pathname === '/favorites') {
+    window.favoriteManager.loadFavoritesPage()
+  }
 })

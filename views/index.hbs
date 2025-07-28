@@ -37,18 +37,25 @@
     {{#if movies.length}}
       {{#each movies as |movie|}}
       <div class="col-sm-3 mb-3">
-        <a href="/movie/{{movie.id}}" class="text-secondary text-decoration-none">
-          <div class="card h-100 shadow-sm movie-card">
+        <div class="card h-100 shadow-sm movie-card">
+          <a href="/movie/{{movie.id}}" class="text-secondary text-decoration-none">
             <img class="card-img-top lazy-load" 
                  data-src="{{../BASE_IMG_URL}}{{movie.image}}" 
                  alt="{{movie.title}}"
                  src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='150'%3E%3Crect width='100%25' height='100%25' fill='%23eee'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em'%3E載入中...%3C/text%3E%3C/svg%3E"
                  loading="lazy">
-            <div class="card-body movie-item-body">
-              <h6 class="card-title">{{movie.title}}</h6>
-            </div>
+          </a>
+          <div class="card-body movie-item-body d-flex justify-content-between align-items-center">
+            <h6 class="card-title mb-0">{{movie.title}}</h6>
+            <button class="btn btn-primary btn-sm favorite-btn ms-2" 
+                    data-movie-id="{{movie.id}}" 
+                    data-movie-title="{{movie.title}}"
+                    data-movie-image="{{movie.image}}"
+                    onclick="event.preventDefault();">
+              <i class="fas fa-plus"></i>
+            </button>
           </div>
-        </a>
+        </div>
       </div>
       {{/each}}
     {{else}}

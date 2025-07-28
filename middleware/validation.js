@@ -53,7 +53,28 @@ const validateMovieId = (id) => {
   return null // 無錯誤
 }
 
+/**
+ * 中間件：驗證電影ID參數
+ * @param {Object} req - Express請求對象
+ * @param {Object} res - Express響應對象
+ * @param {Function} next - Express下一個中間件函數
+ */
+const validateMovieIdMiddleware = (req, res, next) => {
+  const movieId = req.params.movieId || req.body.movieId
+  const error = validateMovieId(movieId)
+  
+  if (error) {
+    return res.status(400).json({
+      success: false,
+      message: error
+    })
+  }
+  
+  next()
+}
+
 module.exports = {
   validateAndSanitizeSearch,
-  validateMovieId
+  validateMovieId,
+  validateMovieIdMiddleware
 }

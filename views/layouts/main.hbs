@@ -5,6 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link href="/stylesheets/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <title>Movie List</title>
 </head>
 
@@ -14,6 +15,11 @@
   <nav class="navbar navbar-dark bg-dark">
     <div class="container-fluid">
       <a class="navbar-brand" href="/">Movie List</a>
+      <div class="navbar-nav">
+        <a class="nav-link" href="/favorites">
+          <i class="fas fa-heart"></i> 收藏清單
+        </a>
+      </div>
     </div>
   </nav>
   {{{ body }}}
