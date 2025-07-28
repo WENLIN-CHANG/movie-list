@@ -1,20 +1,22 @@
 const fs = require('fs')
 const path = require('path')
+const { CACHE, EXTERNAL, PAGINATION } = require('../config/constants')
 
 class MovieModel {
   constructor() {
     this.movies = []
     this.isLoaded = false
+    this.loadingPromise = null // 追蹤載入狀態
     this.searchCache = new Map() // 搜尋結果快取
-    this.cacheTimeout = 5 * 60 * 1000 // 5分鐘快取過期
-    this.loadMovies()
+    this.cacheTimeout = CACHE.SEARCH_TIMEOUT
+    this.loadingPromise = this.loadMovies()
   }
 
-  // 載入電影資料
-  loadMovies() {
+  // 載入電影資料（異步版本）
+  async loadMovies() {
     try {
-      const dataPath = path.join(__dirname, '../public/jsons/movies.json')
-      const data = fs.readFileSync(dataPath, 'utf8')
+      const dataPath = path.join(__dirname, EXTERNAL.MOVIE_DATA_PATH)
+      const data = await fs.promises.readFile(dataPath, 'utf8')
       const movieData = JSON.parse(data)
       this.movies = movieData.results || []
       this.isLoaded = true
@@ -23,20 +25,21 @@ class MovieModel {
       console.error('載入電影資料失敗:', error)
       this.movies = []
       this.isLoaded = false
+      throw error // 重新拋出錯誤，讓調用者知道載入失敗
     }
   }
 
-  // 取得所有電影
-  getAllMovies() {
+  // 取得所有電影（異步）
+  async getAllMovies() {
     if (!this.isLoaded) {
-      this.loadMovies()
+      await this.loadingPromise
     }
     return this.movies
   }
 
-  // 根據ID取得單部電影
-  getMovieById(id) {
-    const movies = this.getAllMovies()
+  // 根據ID取得單部電影（異步）
+  async getMovieById(id) {
+    const movies = await this.getAllMovies()
     return movies.find(movie => movie.id.toString() === id.toString())
   }
 
@@ -50,9 +53,9 @@ class MovieModel {
     }
   }
 
-  // 搜尋電影（附快取功能）
-  searchMovies(keyword, page = 1, limit = 20) {
-    const movies = this.getAllMovies()
+  // 搜尋電影（附快取功能）（異步）
+  async searchMovies(keyword, page = 1, limit = PAGINATION.DEFAULT_LIMIT) {
+    const movies = await this.getAllMovies()
     
     let filteredMovies = movies
     
@@ -107,16 +110,17 @@ class MovieModel {
     }
   }
 
-  // 重新載入資料（用於開發時資料更新）
-  reload() {
+  // 重新載入資料（用於開發時資料更新）（異步）
+  async reload() {
     this.searchCache.clear() // 清空快取
-    this.loadMovies()
+    this.loadingPromise = this.loadMovies()
+    await this.loadingPromise
     return this.isLoaded
   }
 
-  // 取得電影統計資訊
-  getStats() {
-    const movies = this.getAllMovies()
+  // 取得電影統計資訊（異步）
+  async getStats() {
+    const movies = await this.getAllMovies()
     return {
       total: movies.length,
       isLoaded: this.isLoaded,

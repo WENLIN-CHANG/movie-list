@@ -2,9 +2,10 @@ const express = require('express')
 const { engine } = require('express-handlebars')
 const movieRoutes = require('./routes/movies')
 const { notFoundHandler, globalErrorHandler } = require('./middleware/errorHandler')
+const { SERVER, PAGINATION } = require('./config/constants')
 
 const app = express()
-const port = process.env.PORT || 3000
+const port = process.env.PORT || SERVER.DEFAULT_PORT
 
 // 設置模板引擎
 app.engine('.hbs', engine({
@@ -18,7 +19,7 @@ app.engine('.hbs', engine({
     // 生成分頁範圍
     range: (_, end, current) => {
       const pages = []
-      const maxPages = 5 // 最多顯示5個頁碼
+      const maxPages = PAGINATION.MAX_PAGES_DISPLAY
       
       let startPage = Math.max(1, current - Math.floor(maxPages / 2))
       let endPage = Math.min(end, startPage + maxPages - 1)
